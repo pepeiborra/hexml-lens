@@ -1,0 +1,23 @@
+name:                hexml-lens
+version:             0.1.0.0
+synopsis:            Lenses for the hexml package
+description:         Lenses for the hexml package
+homepage:            https://github.com/pepeiborra/hexml-lens#readme
+license:             BSD3
+author:              Jose Iborra
+maintainer:          pepeiborra@gmail.com
+copyright:           All Rights Reserved
+category:            lens
+extra-source-files:
+- README.md
+
+dependencies:
+  - base >= 4.7 && < 5
+  - bytestring
+  - foundation
+  - hexml
+  - lens
+  - text
+
+library: 
+  source-dirs: src
