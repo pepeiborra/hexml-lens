@@ -21,3 +21,13 @@ dependencies:
 
 library: 
   source-dirs: src
+
+tests:
+  doctests:
+    main: Doctests.hs
+    source-dirs:
+      - test
+    dependencies:
+      - doctest
+      - hexml-lens
+      - QuickCheck

@@ -118,12 +118,46 @@ instance Attributes F.String where
 
 -- ---------------------------------------------------------------------------------
 
--- | A prism for parsing and unparsing XML
 class AsXML s where
+  -- | A prism for parsing and unparsing XML.
+  --
+  -- unparsing is provided by 'outer'.
+  --
+  -- >>> "<?xml version=\"1.0\"?><foo/>" ^? _XML
+  -- Just Node "<?xml version=\"1.0\"?><foo/>"
+  --
+  -- Nameless nodes are inserted for trees with >1 root.
+  --
+  -- >>> "<?xml version=\"1.0\"?><foo/>" ^? _XML.to name
+  -- Just ""
+  --
+  -- >>> "<?xml version=\"1.0\"?><foo/>" ^? _XML.node(0::Int)
+  -- Just Node "<?xml version=\"1.0\"?>"
+  --
+  -- >>> "<?xml version=\"1.0\"?><foo/>" ^? _XML.node(1::Int)
+  -- Just Node "<foo/>"
+  --
+  -- If the tree has only 1 root, no nameless nodes are inserted.
+  --
+  -- >>> "<foo/>" ^? _XML.re(_XML @String)._XML.to name
+  -- Just "foo"
+  --
+  --   The law @x ^? re _XML . _XML == x@ doesn't hold for the nameless nodes
+  --   injected by 'parse'.
+  --
+  -- >>> parse "<foo/>" ^? _Right.to name
+  -- Just ""
+  -- >>> parse "<foo/>" ^? _Right.re(_XML @String)._XML.to name
+  -- Just "foo"
+
   _XML :: Prism' s Node
 
 instance AsXML ByteString where
-  _XML = prism' outer (either (const Nothing) Just . parse)
+  _XML = prism' outer doParse where
+    doParse x =
+      case parse x of
+        Right n -> Just $ case children n of [y] -> y ; _ -> n
+        Left  _ -> Nothing
 
 instance AsXML String where
   _XML = strictUtf8 . _XML @ ByteString
@@ -143,3 +177,10 @@ foundation :: F.Encoding -> Fold Strict.ByteString F.String
 foundation encoding = to (F.fromBytes encoding . fromByteString) . filtered (hasn't (_2.folded)) . _1
   where
     fromByteString = F.fromForeignPtr . Strict.toForeignPtr
+
+-- Test setup
+-- ---------------------------------------------------------------------------------
+-- $setup
+-- >>> import Test.QuickCheck
+-- >>> :set -XTypeApplications
+-- >>> :set -XOverloadedStrings
