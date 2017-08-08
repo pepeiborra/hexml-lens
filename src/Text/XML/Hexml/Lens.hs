@@ -6,8 +6,8 @@
 module Text.XML.Hexml.Lens
   ( -- * Nodes
     _children
-  , _contents
   , ChildNode(..)
+  , Contents(..)
   , TextContents(..)
   -- * Attributes
   , Attributes(..)
@@ -15,13 +15,17 @@ module Text.XML.Hexml.Lens
   , AsXML(..)
   ) where
 
+import Control.Arrow
 import Control.Lens hiding (children)
-import Data.ByteString as Strict (ByteString)
+import qualified Data.ByteString as Strict
 import qualified Data.ByteString.Internal as Strict
+import qualified Data.ByteString.Lazy as Lazy
 import Data.ByteString.Lens
 import Data.String
 import qualified Data.Text as Strict
+import qualified Data.Text.Lazy as Lazy
 import qualified Data.Text.Encoding as Strict
+import qualified Data.Text.Lazy.Encoding as Lazy
 import Data.Text.Lens
 import qualified Foundation as F
 import qualified Foundation.String as F
@@ -32,46 +36,71 @@ import Text.XML.Hexml
 _children :: Fold Node Node
 _children = folding children
 
--- | Fold over all the children (text and element)
-_contents :: Fold Node (Either ByteString Node)
-_contents = folding contents
+  -- | Fold over all the children (text and element)
+class Contents s where
+  _contents :: Fold Node (Either s Node)
+
+instance Contents String where
+  _contents = _contents . firsting (from strictUtf8)
+
+instance Contents F.String where
+  _contents  = _contents . lefting (foundation F.UTF8)
+
+instance Contents Strict.Text where
+  _contents  = _contents . firsting (from strictTextUtf8)
+
+instance Contents Lazy.Text where
+  _contents  = _contents . firsting (from lazyTextUtf8)
+
+instance Contents Strict.ByteString where
+  _contents  = folding contents
+
+instance Contents Lazy.ByteString where
+  _contents  = _contents . firsting lazy
 
 -- ---------------------------------------------------------------------------------
 -- | Folds for element nodes
 class ChildNode s where
-  node :: s -> Fold Node Node
+  -- | Fold over a specific child
+  node     :: s -> Fold Node Node
 
 -- | A fold for accessing named children nodes
 --   This is a more efficient version of
 --
 -- > node foo = _children . filtered (\n -> name n == foo)
 instance ChildNode String where
-  node name_ = folding $ flip childrenBy ( name_ ^. strictUtf8)
+  node name_ = node ( name_ ^. strictUtf8)
 
 -- | A fold for accessing named children nodes
 --   This is a more efficient version of
 --
 -- > node foo = _children . filtered (\n -> name n == foo)
 instance ChildNode F.String where
-  node name_ = folding $ flip childrenBy ( F.toList name_ ^. strictUtf8)
+  node name_ = node ( F.toList name_ ^. strictUtf8)
 
 -- | A fold for accessing named children nodes
 --   This is a more efficient version of
 --
 -- > node foo = _children . filtered (\n -> name n == foo)
-instance ChildNode ByteString where
+instance ChildNode Strict.ByteString where
   node name_ = folding $ flip childrenBy name_
+
+instance ChildNode Lazy.ByteString where
+  node name_ = node (name_ ^. strict)
 
 -- | A fold for accessing named children nodes
 --   This is a more efficient version of
 --
 -- > node foo = _children . filtered (\n -> name n == foo)
 instance ChildNode Strict.Text where
-  node name_ = folding $ flip childrenBy ( name_ ^. strictTextUtf8 )
+  node name_ = node ( name_ ^. strictTextUtf8 )
+
+instance ChildNode Lazy.Text where
+  node name_ = node ( name_ ^. lazyTextUtf8 )
 
 -- | A fold for accessing a child node by its index
 instance ChildNode Int where
-  node n = folding $ take 1 . drop n . children
+  node n    = folding $ take 1 . drop n . children
 
 -- ---------------------------------------------------------------------------------
 
@@ -79,14 +108,20 @@ instance ChildNode Int where
 class TextContents s where
   textContents :: Fold Node s
 
-instance TextContents ByteString where
+instance TextContents Strict.ByteString where
   textContents = folding contents . _Left
 
+instance TextContents Lazy.ByteString where
+  textContents = textContents . lazy
+
 instance TextContents String where
-  textContents = textContents @ByteString . from strictUtf8
+  textContents = textContents @Strict.ByteString . from strictUtf8
 
 instance TextContents Strict.Text where
   textContents = textContents . from strictTextUtf8
+
+instance TextContents Lazy.Text where
+  textContents = textContents . from lazyTextUtf8
 
 instance TextContents F.String where
   textContents = textContents . foundation F.UTF8
@@ -100,16 +135,24 @@ class Attributes s where
   -- | Name-Indexed fold over the attribute values
   iattributes :: IndexedFold String Node s
 
-instance Attributes ByteString where
-  _Attribute n = pre $ to (`attributeBy` n) . folded . to attributeValue
+instance Attributes Strict.ByteString where
+  _Attribute n = pre $ to(`attributeBy` n).folded.to(attributeValue)
   iattributes  = ifolding (map (\ (Attribute n v) -> (n^.from strictUtf8, v)) . attributes )
 
+instance Attributes Lazy.ByteString where
+  _Attribute n = _Attribute(n^.strict).mapping(lazy)
+  iattributes = iattributes.lazy
+
 instance Attributes String where
-  _Attribute n = pre $ to (`attributeBy` (n ^. packedChars)) . folded . to attributeValue . from strictUtf8
-  iattributes  = iattributes @ ByteString . unpackedChars
+  _Attribute n = _Attribute(n ^. packedChars).mapping(from strictUtf8)
+  iattributes  = iattributes @ Strict.ByteString . unpackedChars
 
 instance Attributes Strict.Text where
-  _Attribute n = pre $ to (`attributeBy` (n ^. strictTextUtf8)) . folded . to attributeValue . from strictTextUtf8
+  _Attribute n = _Attribute(n ^. strictTextUtf8).mapping(from strictTextUtf8)
+  iattributes  = iattributes . packed
+
+instance Attributes Lazy.Text where
+  _Attribute n = _Attribute(n ^. lazyTextUtf8).mapping(from lazyTextUtf8)
   iattributes  = iattributes . packed
 
 instance Attributes F.String where
@@ -152,20 +195,29 @@ class AsXML s where
 
   _XML :: Prism' s Node
 
-instance AsXML ByteString where
+instance AsXML Strict.ByteString where
   _XML = prism' outer doParse where
     doParse x =
       case parse x of
         Right n -> Just $ case children n of [y] -> y ; _ -> n
         Left  _ -> Nothing
 
+instance AsXML Lazy.ByteString where
+  _XML = strict . _XML @ Strict.ByteString
+
 instance AsXML String where
-  _XML = strictUtf8 . _XML @ ByteString
+  _XML = strictUtf8 . _XML @ Strict.ByteString
 
 instance AsXML Strict.Text where
   _XML = strictTextUtf8 . _XML
 
+instance AsXML Lazy.Text where
+  _XML = lazyTextUtf8 . _XML
+
 -- ---------------------------------------------------------------------------------
+
+lazyTextUtf8 :: Iso' Lazy.Text Lazy.ByteString
+lazyTextUtf8 = iso Lazy.encodeUtf8 Lazy.decodeUtf8
 
 strictTextUtf8 :: Iso' Strict.Text Strict.ByteString
 strictTextUtf8 = iso Strict.encodeUtf8 Strict.decodeUtf8
@@ -177,6 +229,10 @@ foundation :: F.Encoding -> Fold Strict.ByteString F.String
 foundation encoding = to (F.fromBytes encoding . fromByteString) . filtered (hasn't (_2.folded)) . _1
   where
     fromByteString = F.fromForeignPtr . Strict.toForeignPtr
+
+-- | A more restricted version of 'firsting' which works on 'Fold's
+lefting :: Fold l l' -> Fold (Either l a) (Either l' a)
+lefting fold = runFold (left $ Fold fold)
 
 -- Test setup
 -- ---------------------------------------------------------------------------------
