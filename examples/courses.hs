@@ -1,5 +1,4 @@
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE PartialTypeSignatures #-}
 import Control.Lens hiding (children)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy.Char8 as LB
