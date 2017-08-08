@@ -11,16 +11,29 @@ category:            lens
 extra-source-files:
 - README.md
 
-dependencies:
-  - base >= 4.7 && < 5
-  - bytestring
-  - foundation
-  - hexml
-  - lens
-  - text
 
 library: 
   source-dirs: src
+  dependencies:
+    - base >= 4.7 && < 5
+    - bytestring
+    - foundation
+    - hexml
+    - lens
+    - text
+  ghc-options: -Werror
+
+executables:
+  courses:
+    source-dirs: examples
+    main: courses.hs
+    dependencies:
+      - base
+      - bytestring
+      - hexml
+      - hexml-lens
+      - lens
+      - wreq
 
 tests:
   doctests:
