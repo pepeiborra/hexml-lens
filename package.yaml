@@ -21,7 +21,6 @@ library:
     - hexml
     - lens
     - text
-  ghc-options: -Werror
 
 executables:
   courses:

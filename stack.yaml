@@ -9,7 +9,7 @@ flags: {}
 extra-package-dbs: []
 
 ghc-options:
-  hexml-lens: -Wall
+  hexml-lens: -Wall -Werror
 
 # Control whether we use the GHC we find on the path
 # system-ghc: true
