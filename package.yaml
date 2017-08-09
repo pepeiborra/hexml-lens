@@ -12,6 +12,12 @@ extra-source-files:
 - README.md
 
 
+flags:
+  buildExamples:
+    description: build the examples
+    default: False
+    manual : True
+
 library: 
   source-dirs: src
   dependencies:
@@ -26,13 +32,18 @@ executables:
   courses:
     source-dirs: examples
     main: courses.hs
-    dependencies:
-      - base
-      - bytestring
-      - hexml
-      - hexml-lens
-      - lens
-      - wreq
+    when:
+      condition: flag(buildExamples)
+      then:
+        dependencies:
+          - base
+          - bytestring
+          - hexml
+          - hexml-lens
+          - lens
+          - wreq
+      else: 
+        buildable: False
 
 tests:
   doctests:
