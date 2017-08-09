@@ -36,7 +36,7 @@ import Text.XML.Hexml
 _children :: Fold Node Node
 _children = folding children
 
-  -- | Fold over all the children (text and element)
+-- | Fold over all the children (text and element)
 class Contents s where
   _contents :: Fold Node (Either s Node)
 
