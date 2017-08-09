@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS -Wno-unused-top-binds #-}
 import Control.Lens hiding (children)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy.Char8 as LB
