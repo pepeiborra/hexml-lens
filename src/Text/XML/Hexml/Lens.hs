@@ -8,23 +8,26 @@ module Text.XML.Hexml.Lens
     _children
   , XML(..)
   , node
+  , multiple
   ) where
 
 import           Control.Arrow
-import           Control.Lens              hiding (children)
-import qualified Data.ByteString           as Strict
-import qualified Data.ByteString.Internal  as Strict
-import qualified Data.ByteString.Lazy      as Lazy
+import           Control.Lens               hiding (children)
+import qualified Data.ByteString            as Strict
+import qualified Data.ByteString.Internal   as Strict
+import qualified Data.ByteString.Lazy       as Lazy
 import           Data.ByteString.Lens
+import           Data.Functor.Contravariant
+import           Data.Profunctor.Unsafe
 import           Data.String
-import qualified Data.Text                 as Strict
-import qualified Data.Text.Encoding        as Strict
-import qualified Data.Text.Lazy            as Lazy
-import qualified Data.Text.Lazy.Encoding   as Lazy
+import qualified Data.Text                  as Strict
+import qualified Data.Text.Encoding         as Strict
+import qualified Data.Text.Lazy             as Lazy
+import qualified Data.Text.Lazy.Encoding    as Lazy
 import           Data.Text.Lens
-import qualified Foundation                as F
-import qualified Foundation.Array.Internal as F
-import qualified Foundation.String         as F
+import qualified Foundation                 as F
+import qualified Foundation.Array.Internal  as F
+import qualified Foundation.String          as F
 import           Text.XML.Hexml
 
 -- | Getter for the element children
@@ -166,6 +169,9 @@ foundation encoding = to (F.fromBytes encoding . fromByteString) . {-. filtered 
 -- | A more restricted version of 'firsting' which works on 'Fold's
 lefting :: Fold l l' -> Fold (Either l a) (Either l' a)
 lefting fold = runFold (left $ Fold fold)
+
+multiple :: Getting [a] s a -> IndexPreservingGetter s [a]
+multiple l = dimap (getConst #. l (Const #. (:[]))) phantom
 
 -- Test setup
 -- ---------------------------------------------------------------------------------
