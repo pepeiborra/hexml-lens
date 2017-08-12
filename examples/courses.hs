@@ -1,6 +1,12 @@
+{-# LANGUAGE FlexibleInstances        #-}
+{-# LANGUAGE FunctionalDependencies   #-}
+{-# LANGUAGE MultiParamTypeClasses    #-}
+{-# LANGUAGE PartialTypeSignatures    #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE DisambiguateRecordFields #-}
+{-# LANGUAGE DuplicateRecordFields    #-}
+{-# LANGUAGE RecordWildCards          #-}
+{-# LANGUAGE TemplateHaskell          #-}
 {-# OPTIONS -Wno-unused-top-binds #-}
 
 import           Control.Applicative        (optional)
@@ -8,6 +14,7 @@ import qualified Control.Category           as C
 import           Control.Lens               hiding (children)
 import qualified Data.ByteString.Lazy.Char8 as LB
 import           Network.Wreq
+import           Test.Hspec
 import           Text.XML.Hexml
 import           Text.XML.Hexml.Lens
 
@@ -18,50 +25,59 @@ url2 = "http://aiweb.cs.washington.edu/research/projects/xmltk/xmldata/data/cour
 type Strings = String
 
 data Place s = Place
-  { building :: s
-  , room     :: Int
+  { _building :: s
+  , _room     :: Int
   }
   deriving Show
 
 data Course s = Course
-  { title      :: s
-  , instructor :: Maybe s
-  , place      :: Maybe (Place s)
-  , sections   :: [Section s]
+  { _title            :: s
+  , _courseInstructor :: Maybe s
+  , _place            :: Maybe (Place s)
+  , _courseSections   :: [Section s]
   }
   deriving Show
 
 data Section s = Section
-  { name       :: s
-  , days       :: s
-  , start, end :: s
-  , instructor :: s
+  { _name        :: s
+  , _days        :: s
+  , _start, _end :: s
+  , _instructor  :: s
   }
   deriving Show
 
+makeFields ''Place
+makeFields ''Course
+makeFields ''Section
+
 main :: IO ()
 main = do
-  r <- get url2
-  let courses = take 10 $ r ^.. responseBody . to stripDocTypeB . _XML . node "course_listing" . courseF
-  print courses
+  r <- get url
+  r2 <- get url2
+  let parser :: Fold (Response LB.ByteString) (Course Strings)
+      parser = responseBody . to stripDocTypeB . _XML . _children . folded . courseF
+  lengthOf parser r  `shouldBe` 2510
+  lengthOf parser r2 `shouldBe` 2112
+  r  `shouldSatisfy` allOf (parser.sections) null
+  r2 `shouldSatisfy` allOf (parser.sections) (not.null)
 
 stripDocTypeB :: LB.ByteString -> LB.ByteString
 stripDocTypeB = LB.unlines . drop 2 . LB.lines
 
 courseF :: Fold Node (Course Strings)
 courseF = runFold $ do
-  title <- field "title"
-  instructor <- optional $ field "instructor"
-  place <- optional $ Fold $ node "place" . placeF
-  sections <- Fold $ multiple $ node "section_listing" . sectionF
+  _title <- field "title"
+  _courseInstructor <- optional $ field "instructor"
+  _place <- optional $ Fold $ node "place" . placeF
+  _courseSections <- Fold $ multiple $ node "section_listing" . sectionF
   return Course{..}
 
 sectionF :: Fold Node (Section Strings)
 sectionF = runFold $ do
-  instructor <- field "instructor"
-  name <- field "section"
-  days <- field "days"
-  (start, end) <- Fold $ node "hours" . runFold hoursF
+  _instructor <- field "instructor"
+  _name <- field "section"
+  _days <- field "days"
+  (_start, _end) <- Fold $ node "hours" . runFold hoursF
   return Section{..}
 
 hoursF :: ReifiedFold Node (Strings, Strings)

@@ -11,41 +11,30 @@ category:            lens
 extra-source-files:
 - README.md
 
-
-flags:
-  buildExamples:
-    description: build the examples
-    default: False
-    manual : True
-
 library: 
   source-dirs: src
   dependencies:
     - base >= 4.7 && < 5
     - bytestring
+    - contravariant
     - foundation
     - hexml
     - lens
+    - profunctors
     - text
 
-executables:
+tests:
   courses:
     source-dirs: examples
     main: courses.hs
-    when:
-      condition: flag(buildExamples)
-      then:
-        dependencies:
-          - base
-          - bytestring
-          - hexml
-          - hexml-lens
-          - lens
-          - wreq
-      else: 
-        buildable: False
-
-tests:
+    dependencies:
+      - base
+      - bytestring
+      - hexml
+      - hexml-lens
+      - hspec
+      - lens
+      - wreq
   doctests:
     main: Doctests.hs
     source-dirs:
