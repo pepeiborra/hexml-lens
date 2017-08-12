@@ -1,5 +1,5 @@
 name:                hexml-lens
-version:             0.2.0
+version:             0.2.1
 synopsis:            Lenses for the hexml package
 description:         Lenses for the hexml package
 homepage:            https://github.com/pepeiborra/hexml-lens#readme
