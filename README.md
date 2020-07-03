@@ -26,7 +26,7 @@ main :: IO ()
 main = do
   r <- get url
   let stripDocType = LB.unlines . drop 2 . LB.lines
-  let courses = take 10 $ r ^.. responseBody . to stripDocType . _XML . _children . courseF
+  let courses = take 10 $ r ^.. responseBody . to stripDocType . _XML . _children . folded . courseF
   print courses
 
 courseF :: Fold Node (Course B.ByteString)
