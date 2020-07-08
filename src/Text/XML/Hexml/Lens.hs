@@ -11,7 +11,6 @@ module Text.XML.Hexml.Lens
   , multiple
   ) where
 
-import           Control.Arrow
 import           Control.Lens               hiding (children)
 import qualified Data.ByteString            as Strict
 import qualified Data.ByteString.Internal   as Strict
@@ -101,13 +100,13 @@ instance XML String where
 
 instance XML F.String where
   _XML = foundationUtf8 . _XML
-  _contents  = _contents . lefting (foundation F.UTF8)
-  _inner = _inner . foundation F.UTF8
-  _outer = _outer . foundation F.UTF8
-  textContents = textContents . foundation F.UTF8
-  _Attribute n = pre $ to (`attributeBy` (F.toList n ^. packedChars)) . folded . to attributeValue . foundation F.UTF8
+  _contents  = _contents . firsting (from foundationUtf8)
+  _inner = _inner . from foundationUtf8
+  _outer = _outer . from foundationUtf8
+  textContents = textContents . from foundationUtf8
+  _Attribute n = _Attribute(n ^. foundationUtf8).mapping(from foundationUtf8)
   iattributes  = iattributes . to fromString
-  nodes name_ = nodes ( F.toList name_ ^. strictUtf8)
+  nodes name_ = nodes ( name_ ^. foundationUtf8)
 
 instance XML Strict.Text where
   _XML = strictTextUtf8 . _XML
@@ -167,15 +166,6 @@ foundationUtf8 = iso toByteString fromByteString
   where
     toByteString = Strict.packBytes . F.toList . F.toBytes F.UTF8
     fromByteString = view _1 . F.fromBytes F.UTF8 . F.fromForeignPtr . Strict.toForeignPtr
-
-foundation :: F.Encoding -> Getter Strict.ByteString F.String
-foundation encoding = to (F.fromBytes encoding . fromByteString) . {-. filtered (hasn't (_2.folded))-} _1
-  where
-    fromByteString = F.fromForeignPtr . Strict.toForeignPtr
-
--- | A more restricted version of 'firsting' which works on 'Fold's
-lefting :: Fold l l' -> Fold (Either l a) (Either l' a)
-lefting fold = runFold (left $ Fold fold)
 
 multiple :: Getting [a] s a -> IndexPreservingGetter s [a]
 multiple l = dimap (getConst #. l (Const #. (:[]))) phantom
