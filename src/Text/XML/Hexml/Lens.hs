@@ -100,6 +100,7 @@ instance XML String where
   nodes name_ = nodes ( name_ ^. strictUtf8)
 
 instance XML F.String where
+  _XML = foundationUtf8 . _XML
   _contents  = _contents . lefting (foundation F.UTF8)
   _inner = _inner . foundation F.UTF8
   _outer = _outer . foundation F.UTF8
@@ -160,6 +161,12 @@ strictTextUtf8 = iso Strict.encodeUtf8 Strict.decodeUtf8
 
 strictUtf8 :: Iso' String Strict.ByteString
 strictUtf8 = packed . strictTextUtf8
+
+foundationUtf8 :: Iso' F.String Strict.ByteString
+foundationUtf8 = iso toByteString fromByteString
+  where
+    toByteString = Strict.packBytes . F.toList . F.toBytes F.UTF8
+    fromByteString = view _1 . F.fromBytes F.UTF8 . F.fromForeignPtr . Strict.toForeignPtr
 
 foundation :: F.Encoding -> Getter Strict.ByteString F.String
 foundation encoding = to (F.fromBytes encoding . fromByteString) . {-. filtered (hasn't (_2.folded))-} _1
