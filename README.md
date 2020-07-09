@@ -4,7 +4,7 @@
 [![Travis Build Status](https://travis-ci.org/pepeiborra/hexml-lens.svg)](https://travis-ci.org/pepeiborra/hexml-lens)
 
 Folds and getters for the Hexml `Node` type.
-```
+```haskell
 {-# LANGUAGE RecordWildCards #-}
 import Control.Lens hiding (children)
 import qualified Data.ByteString as B
