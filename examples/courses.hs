@@ -19,8 +19,8 @@ import           Text.XML.Hexml
 import           Text.XML.Hexml.Lens
 
 url,url2 :: String
-url = "http://aiweb.cs.washington.edu/research/projects/xmltk/xmldata/data/courses/reed.xml"
-url2 = "http://aiweb.cs.washington.edu/research/projects/xmltk/xmldata/data/courses/uwm.xml"
+url = "https://web.archive.org/web/20200211134934if_/http://aiweb.cs.washington.edu/research/projects/xmltk/xmldata/data/courses/reed.xml"
+url2 = "https://web.archive.org/web/20171112123740if_/http://aiweb.cs.washington.edu:80/research/projects/xmltk/xmldata/data/courses/uwm.xml"
 
 type Strings = String
 
