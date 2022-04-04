@@ -1,4 +1,4 @@
-cabal-version: 1.12
+cabal-version: 2.2
 name:           hexml-lens
 version:        0.2.2
 synopsis:       Lenses for the hexml package
@@ -8,19 +8,13 @@ homepage:       https://github.com/pepeiborra/hexml-lens#readme
 author:         Jose Iborra
 maintainer:     pepeiborra@gmail.com
 copyright:      All Rights Reserved
-license:        BSD3
+license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
     README.md
 
-library
-  exposed-modules:
-      Text.XML.Hexml.Lens
-  other-modules:
-      Paths_hexml_lens
-  hs-source-dirs:
-      src
+common depends
   build-depends:
       base >=4.7 && <5
     , bytestring
@@ -30,9 +24,19 @@ library
     , lens
     , profunctors
     , text
+
+library
+  import: depends
+  exposed-modules:
+      Text.XML.Hexml.Lens
+  other-modules:
+      Paths_hexml_lens
+  hs-source-dirs:
+      src
   default-language: Haskell2010
 
 test-suite courses
+  import: depends
   type: exitcode-stdio-1.0
   main-is: courses.hs
   other-modules:
@@ -40,25 +44,7 @@ test-suite courses
   hs-source-dirs:
       examples
   build-depends:
-      base
-    , bytestring
-    , hexml
-    , hexml-lens
+      hexml-lens
     , hspec
-    , lens
     , wreq
-  default-language: Haskell2010
-
-test-suite doctests
-  type: exitcode-stdio-1.0
-  main-is: Doctests.hs
-  other-modules:
-      Paths_hexml_lens
-  hs-source-dirs:
-      test
-  build-depends:
-      QuickCheck
-    , base
-    , doctest
-    , hexml-lens
   default-language: Haskell2010
