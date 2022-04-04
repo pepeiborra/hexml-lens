@@ -89,13 +89,13 @@ node :: XML s => s -> Fold Node Node
 node n = nodes n . folded
 
 instance XML String where
-  _XML = strictUtf8 . _XML @ Strict.ByteString
+  _XML = strictUtf8 . _XML @Strict.ByteString
   _contents = _contents . firsting (from strictUtf8)
   _inner = _inner . from strictUtf8
   _outer = _outer . from strictUtf8
   textContents = textContents @Strict.ByteString . from strictUtf8
   _Attribute n = _Attribute(n ^. packedChars).mapping(from strictUtf8)
-  iattributes  = iattributes @ Strict.ByteString . unpackedChars
+  iattributes  = iattributes @Strict.ByteString . unpackedChars
   nodes name_ = nodes ( name_ ^. strictUtf8)
 
 instance XML F.String where
@@ -143,7 +143,7 @@ instance XML Strict.ByteString where
   nodes name_ = to $ flip childrenBy name_
 
 instance XML Lazy.ByteString where
-  _XML = strict . _XML @ Strict.ByteString
+  _XML = strict . _XML @Strict.ByteString
   _contents  = _contents . firsting lazy
   _inner = _inner . lazy
   _outer = _outer . lazy
