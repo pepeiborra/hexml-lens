@@ -27,6 +27,8 @@ common depends
 
 library
   import: depends
+  autogen-modules:
+      Paths_hexml_lens
   exposed-modules:
       Text.XML.Hexml.Lens
   other-modules:
